@@ -285,6 +285,26 @@
 
     .detail-link:hover { background: var(--link-bg-h); }
 
+    .event-item.featured {
+      border-left: 2px solid var(--text-muted);
+      padding-left: 1rem;
+      background: linear-gradient(
+        to right,
+        rgba(26, 25, 22, 0.04) 0%,
+        transparent 80%
+      );
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .event-item.featured {
+        background: linear-gradient(
+          to right,
+          rgba(240, 239, 233, 0.05) 0%,
+          transparent 80%
+        );
+      }
+    }
+
     /* ── Videos ── */
     .videos-list {
       display: flex;
@@ -563,6 +583,8 @@
         const fullDate = `${DAY_NAMES[ev.date.getDay()]}, ${MONTH_NAMES[ev.date.getMonth()]} ${day}, ${ev.date.getFullYear()}`;
         const city     = (ev.city || "").trim();
         const time     = (ev.time || "").trim();
+        const isFeatured = ["yes", "true", "1"].includes((ev.featured || "").toLowerCase().trim());
+        if (isFeatured) li.classList.add("featured");
 
         li.innerHTML = `
           <button class="event-trigger" aria-expanded="false" aria-controls="detail-${i}" onclick="toggleEvent(this,${i})">
