@@ -167,6 +167,17 @@
     /* ── Dates ── */
     .events-list { list-style: none; }
 
+    .month-header {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 1.5rem 0 0.5rem;
+    }
+
+    .month-header:first-child { padding-top: 0; }
+
     .event-item {
       border-bottom: 0.5px solid var(--border);
       opacity: 0;
@@ -530,7 +541,19 @@
       const ul = document.createElement("ul");
       ul.className = "events-list";
 
+      let currentMonth = null;
+
       events.forEach((ev, i) => {
+        const monthKey = `${ev.date.getFullYear()}-${ev.date.getMonth()}`;
+
+        if (monthKey !== currentMonth) {
+          currentMonth = monthKey;
+          const header = document.createElement("li");
+          header.className = "month-header";
+          header.textContent = `${MONTH_NAMES[ev.date.getMonth()]} ${ev.date.getFullYear()}`;
+          ul.appendChild(header);
+        }
+
         const li       = document.createElement("li");
         li.className   = "event-item";
         li.style.animationDelay = (i * 50) + "ms";
