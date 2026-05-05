@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Max and Landon Band</title>
+
+  <!-- ============================================================
+    CONFIGURATION — edit these values
+  ============================================================ -->
+  <script>
+    const CONFIG = {
+      bandName: "The Max and Landon Band",
+
+      // Google Sheet CSV URL — see README.md for setup instructions
+      sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjZUa6mJpghYiaoqs2_9gptx2h1ZyPMhpQ17qV78PxLbj1ZfjeogdfhFCnJDFeNCdeEp5NRXrJc4Ju/pub?gid=536009823&single=true&output=csv",
+
+      // Browser cache duration in ms. 3600000 = 1 hour. 0 = always fetch fresh.
+      cacheDuration: 3600000,
+
+      // Videos tab — add as many as you like.
+      // To get a video ID: open the YouTube video and copy the part after "v=" in the URL.
+      // e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ  →  id is "dQw4w9WgXcQ"
+      videos: [
+        { id: "d0WupGLSW3Q", title: "Life in the Fast Lane – F6 Art Lounge" },
+        { id: "wJpfo0Hq8hc", title: "Milk Cow Blues — Levitt Pavilion" },
+      ],
+
+      // Links tab — add, remove, or reorder as you like.
+      // "note" is optional fine print shown on the right side of the row.
+      links: [
+        { label: "Instagram",  url: "https://www.instagram.com/maxandlandon/",  note: "@maxandlandon" },
+        { label: "Max's Instagram",  url: "https://www.instagram.com/maxsegmusic/",  note: "@maxsegmusic" },
+        { label: "Landon's Instagram",  url: "https://www.instagram.com/landonmusic/",  note: "@landonmusic" },
+        { label: "YouTube",    url: "https://www.youtube.com/@MaxandLandon",   note: "" },
+        { label: "Facebook",   url: "https://www.facebook.com/people/Max-Landon/61561733794774/",   note: "" },
+        { label: "Max's Facebook",   url: "https://www.facebook.com/max.segura.231034",   note: "" },
+        { label: "Tip Jar",    url: "https://venmo.com/u/landonmusic",      note: "Venmo" },
+      ],
+    };
+  </script>
+  <!-- ============================================================ -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #faf9f7;
+      --text:       #1a1916;
+      --text-muted: #6b6a66;
+      --text-faint: #a09f9b;
+      --border:     rgba(26,25,22,0.1);
+      --border-mid: rgba(26,25,22,0.18);
+      --link-bg:    #f0efe9;
+      --link-bg-h:  #e4e3db;
+      --font-display: 'Noto Serif', Georgia, serif;
+      --font-body:    'Noto Sans', system-ui, sans-serif;
+      --radius:     8px;
+      --max-w:      640px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:         #141412;
+        --text:       #f0efe9;
+        --text-muted: #9a9990;
+        --text-faint: #5a5954;
+        --border:     rgba(240,239,233,0.1);
+        --border-mid: rgba(240,239,233,0.18);
+        --link-bg:    #252520;
+        --link-bg-h:  #2e2e28;
+      }
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0 1rem;
+    }
+
+    .page {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 3rem 0 6rem;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 0.5px solid var(--border-mid);
+    }
+
+    .band-name {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 0.65rem;
+    }
+
+    /* ── Nav ── */
+    .site-nav { display: flex; list-style: none; }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      border-bottom: 1px solid transparent;
+      padding: 0 0 2px;
+      margin-right: 1.25rem;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      cursor: pointer;
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav-btn:hover { color: var(--text-muted); }
+
+    .nav-btn.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+
+    /* ── Sections ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Shared state ── */
+    .state {
+      padding: 3rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+    }
+
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--border-mid);
+      border-top-color: var(--text-muted);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-icon { font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.4; }
+
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Dates ── */
+    .events-list { list-style: none; }
+
+    .event-item {
+      border-bottom: 0.5px solid var(--border);
+      opacity: 0;
+      transform: translateY(6px);
+      animation: fadeUp 0.3s ease forwards;
+    }
+
+    .event-trigger {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+      padding: 1rem 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .event-trigger:hover .event-venue {
+      text-decoration: underline;
+      text-decoration-color: var(--border-mid);
+    }
+
+    .date-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 44px;
+      flex-shrink: 0;
+    }
+
+    .date-month {
+      font-size: 0.625rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      font-weight: 500;
+    }
+
+    .date-day {
+      font-family: var(--font-display);
+      font-size: 1.875rem;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .event-info { flex: 1; min-width: 0; }
+
+    .event-venue {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-meta { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+    .chevron {
+      color: var(--text-faint);
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .chevron svg {
+      display: block; width: 14px; height: 14px;
+      fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .event-item.open .chevron { transform: rotate(90deg); }
+
+    .event-detail { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+    .event-item.open .event-detail { max-height: 160px; }
+
+    .event-detail-inner {
+      padding: 0 0 1.125rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+
+    .detail-time    { font-size: 0.8125rem; color: var(--text-muted); }
+    .detail-address { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+    .detail-links   { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
+
+    .detail-link {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--link-bg);
+      border: 0.5px solid var(--border-mid);
+      border-radius: var(--radius);
+      padding: 0.3125rem 0.75rem;
+      text-decoration: none;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .detail-link:hover { background: var(--link-bg-h); }
+
+    /* ── Videos ── */
+    .videos-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      padding-top: 0.25rem;
+    }
+
+    .video-item {
+      opacity: 0;
+      transform: translateY(6px);
+      animation: fadeUp 0.3s ease forwards;
+    }
+
+    .video-title {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    .video-embed {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      background: var(--link-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 0.5px solid var(--border);
+    }
+
+    .video-embed iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* ── Links ── */
+    .links-list { list-style: none; padding-top: 0.25rem; }
+
+    .link-item {
+      border-bottom: 0.5px solid var(--border);
+      opacity: 0;
+      transform: translateY(6px);
+      animation: fadeUp 0.3s ease forwards;
+    }
+
+    .link-anchor {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9375rem 0;
+      text-decoration: none;
+      color: var(--text);
+      gap: 1rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .link-anchor:hover .link-label {
+      text-decoration: underline;
+      text-decoration-color: var(--border-mid);
+    }
+
+    .link-label { font-size: 0.9375rem; font-weight: 500; color: var(--text); }
+    .link-note  { font-size: 0.8125rem; color: var(--text-faint); white-space: nowrap; flex-shrink: 0; }
+
+    .link-arrow { color: var(--text-faint); flex-shrink: 0; margin-left: auto; padding-left: 0.75rem; }
+    .link-arrow svg {
+      display: block; width: 14px; height: 14px;
+      fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* ── Footer ── */
+    .footer-note {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <header class="page-header">
+      <h1 class="band-name" id="band-name"></h1>
+      <nav aria-label="Site sections">
+        <ul class="site-nav">
+          <li><button class="nav-btn active" data-tab="dates"  onclick="switchTab('dates')">Dates</button></li>
+          <li><button class="nav-btn"        data-tab="videos" onclick="switchTab('videos')">Videos</button></li>
+          <li><button class="nav-btn"        data-tab="links"  onclick="switchTab('links')">Links</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Dates -->
+    <section id="tab-dates" class="section active" aria-label="Upcoming shows">
+      <div class="state" id="dates-loading">
+        <div class="spinner"></div>
+        Loading shows…
+      </div>
+    </section>
+
+    <!-- Videos -->
+    <section id="tab-videos" class="section" aria-label="Videos">
+      <div id="videos-content"></div>
+    </section>
+
+    <!-- Links -->
+    <section id="tab-links" class="section" aria-label="Links">
+      <ul class="links-list" id="links-content"></ul>
+    </section>
+
+    <p class="footer-note" id="cache-note"></p>
+  </div>
+
+  <script>
+    // ── Band name ──────────────────────────────────────────────────────────────
+    document.getElementById("band-name").textContent = CONFIG.bandName;
+    document.title = CONFIG.bandName;
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    function switchTab(tab) {
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("tab-" + tab).classList.add("active");
+      document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+    }
+
+    // ── Date helpers ───────────────────────────────────────────────────────────
+    const MONTHS      = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const DAY_NAMES   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+    function parseDate(str) {
+      if (!str) return null;
+      str = str.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        const [y, m, d] = str.split("-").map(Number);
+        return new Date(y, m - 1, d);
+      }
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+        const [m, d, y] = str.split("/").map(Number);
+        return new Date(y, m - 1, d);
+      }
+      return null;
+    }
+
+    function gcalDate(date, time) {
+      const pad = n => String(n).padStart(2, "0");
+      const y = date.getFullYear(), mo = pad(date.getMonth() + 1), d = pad(date.getDate());
+      let h = 20, mi = 0;
+      if (time) {
+        const t = time.trim();
+        const ampm = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (ampm) {
+          h = parseInt(ampm[1]); mi = parseInt(ampm[2]);
+          if (/PM/i.test(ampm[3]) && h !== 12) h += 12;
+          if (/AM/i.test(ampm[3]) && h === 12) h = 0;
+        } else {
+          const mil = t.match(/(\d{1,2}):(\d{2})/);
+          if (mil) { h = parseInt(mil[1]); mi = parseInt(mil[2]); }
+        }
+      }
+      const endH = (h + 3) % 24;
+      return {
+        start: `${y}${mo}${d}T${pad(h)}${pad(mi)}00`,
+        end:   `${y}${mo}${d}T${pad(endH)}${pad(mi)}00`,
+      };
+    }
+
+    function mapsUrl(addr) {
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addr);
+    }
+
+    function gcalUrl(ev) {
+      const { start, end } = gcalDate(ev.date, ev.time);
+      return "https://calendar.google.com/calendar/render?action=TEMPLATE"
+        + "&text="     + encodeURIComponent(CONFIG.bandName + " at " + ev.venue)
+        + "&dates="    + start + "/" + end
+        + "&location=" + encodeURIComponent(ev.address || ev.venue + " " + ev.city);
+    }
+
+    // ── CSV parser ─────────────────────────────────────────────────────────────
+    function parseCSV(text) {
+      const lines = text.trim().split("\n");
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/\s+/g, "_"));
+      return lines.slice(1).map(line => {
+        const cols = [];
+        let cur = "", inQ = false;
+        for (const ch of line) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === "," && !inQ) { cols.push(cur.trim()); cur = ""; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+        const row = {};
+        headers.forEach((h, i) => { row[h] = cols[i] || ""; });
+        return row;
+      });
+    }
+
+    // ── Fetch & cache ──────────────────────────────────────────────────────────
+    const CACHE_KEY = "band_calendar_data";
+    const CACHE_TS  = "band_calendar_ts";
+
+    async function loadEvents() {
+      if (CONFIG.cacheDuration > 0) {
+        try {
+          const ts = parseInt(localStorage.getItem(CACHE_TS) || "0");
+          if (Date.now() - ts < CONFIG.cacheDuration) {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) { updateCacheNote(ts); return JSON.parse(cached); }
+          }
+        } catch (_) {}
+      }
+      const resp = await fetch(CONFIG.sheetUrl);
+      if (!resp.ok) throw new Error("Sheet fetch failed: " + resp.status);
+      const rows = parseCSV(await resp.text());
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(rows));
+        localStorage.setItem(CACHE_TS, String(Date.now()));
+        updateCacheNote(Date.now());
+      } catch (_) {}
+      return rows;
+    }
+
+    function updateCacheNote(ts) {
+      const el  = document.getElementById("cache-note");
+      const ago = Math.round((Date.now() - ts) / 60000);
+      el.textContent = ago < 2 ? "" : `Loaded from cache · refreshed ${ago} min ago`;
+    }
+
+    // ── Render: Dates ──────────────────────────────────────────────────────────
+    function renderDates(rows) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const events = rows
+        .map(r => ({ ...r, date: parseDate(r.date) }))
+        .filter(r => r.date && r.date >= today)
+        .sort((a, b) => a.date - b.date);
+
+      const section = document.getElementById("tab-dates");
+
+      if (events.length === 0) {
+        section.innerHTML = `<div class="state"><div class="empty-icon">◎</div>No upcoming shows scheduled.<br>Check back soon.</div>`;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      ul.className = "events-list";
+
+      events.forEach((ev, i) => {
+        const li       = document.createElement("li");
+        li.className   = "event-item";
+        li.style.animationDelay = (i * 50) + "ms";
+        const mo       = MONTHS[ev.date.getMonth()];
+        const day      = ev.date.getDate();
+        const fullDate = `${DAY_NAMES[ev.date.getDay()]}, ${MONTH_NAMES[ev.date.getMonth()]} ${day}, ${ev.date.getFullYear()}`;
+        const city     = (ev.city || "").trim();
+        const time     = (ev.time || "").trim();
+
+        li.innerHTML = `
+          <button class="event-trigger" aria-expanded="false" aria-controls="detail-${i}" onclick="toggleEvent(this,${i})">
+            <div class="date-block" aria-hidden="true">
+              <span class="date-month">${mo}</span>
+              <span class="date-day">${day}</span>
+            </div>
+            <div class="event-info">
+              <div class="event-venue">${ev.venue || "TBA"}</div>
+              <div class="event-meta">${city}</div>
+            </div>
+            <span class="chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+          </button>
+          <div class="event-detail" id="detail-${i}" role="region">
+            <div class="event-detail-inner">
+              <div class="detail-time">${fullDate}${time ? " · " + time : ""}</div>
+              ${ev.address ? `<div class="detail-address">${ev.address}</div>` : ""}
+              <div class="detail-links">
+                <a class="detail-link" href="${mapsUrl(ev.address || ev.venue + " " + city)}" target="_blank" rel="noopener">Get directions</a>
+                <a class="detail-link" href="${gcalUrl(ev)}" target="_blank" rel="noopener">Add to calendar</a>
+              </div>
+            </div>
+          </div>`;
+        ul.appendChild(li);
+      });
+
+      section.innerHTML = "";
+      section.appendChild(ul);
+    }
+
+    function toggleEvent(btn, i) {
+      const item   = btn.closest(".event-item");
+      const isOpen = item.classList.contains("open");
+      document.querySelectorAll(".event-item.open").forEach(el => {
+        el.classList.remove("open");
+        el.querySelector(".event-trigger").setAttribute("aria-expanded", "false");
+      });
+      if (!isOpen) { item.classList.add("open"); btn.setAttribute("aria-expanded", "true"); }
+    }
+
+    // ── Render: Videos ─────────────────────────────────────────────────────────
+    function renderVideos() {
+      const container = document.getElementById("videos-content");
+      if (!CONFIG.videos || CONFIG.videos.length === 0) {
+        container.innerHTML = `<div class="state"><div class="empty-icon">▷</div>No videos added yet.</div>`;
+        return;
+      }
+      const list = document.createElement("div");
+      list.className = "videos-list";
+      CONFIG.videos.forEach((v, i) => {
+        const item = document.createElement("div");
+        item.className = "video-item";
+        item.style.animationDelay = (i * 80) + "ms";
+        item.innerHTML = `
+          <div class="video-title">${v.title}</div>
+          <div class="video-embed">
+            <iframe
+              src="https://www.youtube.com/embed/${v.id}"
+              title="${v.title}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              loading="lazy">
+            </iframe>
+          </div>`;
+        list.appendChild(item);
+      });
+      container.appendChild(list);
+    }
+
+    // ── Render: Links ──────────────────────────────────────────────────────────
+    function renderLinks() {
+      const ul = document.getElementById("links-content");
+      if (!CONFIG.links || CONFIG.links.length === 0) {
+        ul.innerHTML = `<div class="state"><div class="empty-icon">↗</div>No links added yet.</div>`;
+        return;
+      }
+      CONFIG.links.forEach((l, i) => {
+        const li = document.createElement("li");
+        li.className = "link-item";
+        li.style.animationDelay = (i * 50) + "ms";
+        li.innerHTML = `
+          <a class="link-anchor" href="${l.url}" target="_blank" rel="noopener">
+            <span class="link-label">${l.label}</span>
+            ${l.note ? `<span class="link-note">${l.note}</span>` : ""}
+            <span class="link-arrow">
+              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+          </a>`;
+        ul.appendChild(li);
+      });
+    }
+
+    // ── Boot ───────────────────────────────────────────────────────────────────
+    renderVideos();
+    renderLinks();
+
+    (async () => {
+      try {
+        renderDates(await loadEvents());
+      } catch (err) {
+        console.error(err);
+        document.getElementById("tab-dates").innerHTML = `
+          <div class="state">
+            <div class="empty-icon">⚠</div>
+            Couldn't load shows right now.<br>
+            <span style="font-size:0.8125rem;margin-top:0.5rem;display:block;">
+              Check back soon!
+            </span>
+          </div>`;
+      }
+    })();
+  </script>
+</body>
+</html>
