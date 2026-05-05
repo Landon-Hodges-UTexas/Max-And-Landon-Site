@@ -404,6 +404,7 @@
       document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
       document.getElementById("tab-" + tab).classList.add("active");
       document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+      history.replaceState(null, "", "#" + tab);
     }
 
     // ── Date helpers ───────────────────────────────────────────────────────────
@@ -635,6 +636,9 @@
     // ── Boot ───────────────────────────────────────────────────────────────────
     renderVideos();
     renderLinks();
+    
+    const initialTab = window.location.hash.replace("#", "") || "dates";
+    if (["dates", "videos", "links"].includes(initialTab)) switchTab(initialTab);
 
     (async () => {
       try {
