@@ -16,7 +16,7 @@
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjZUa6mJpghYiaoqs2_9gptx2h1ZyPMhpQ17qV78PxLbj1ZfjeogdfhFCnJDFeNCdeEp5NRXrJc4Ju/pub?gid=536009823&single=true&output=csv",
 
       // Browser cache duration in ms. 3600000 = 1 hour. 0 = always fetch fresh.
-      cacheDuration: 3600000,
+      cacheDuration: 360000,
 
       // Videos tab — add as many as you like.
       // To get a video ID: open the YouTube video and copy the part after "v=" in the URL.
@@ -36,6 +36,8 @@
         { label: "Facebook",   url: "https://www.facebook.com/people/Max-Landon/61561733794774/",   note: "" },
         { label: "Max's Facebook",   url: "https://www.facebook.com/max.segura.231034",   note: "" },
         { label: "Tip Jar",    url: "https://venmo.com/u/landonmusic",      note: "Venmo" },
+        { label: "Tip Jar",   url: "https://www.zellepay.com/qr-codes/?data=eyJhY3Rpb24iOiJwYXltZW50IiwibmFtZSI6IkxBTkRPTiIsInFyQ29kZU5hbWUiOiJMQU5ET04iLCJ0b2tlbiI6Ijk3MjY5MzI1NzUifQ==", note: "Zelle" },
+        { label: "Tip Jar",    url: "https://cash.app/$landonhodgesmusic",         note: "Cash App" }
       ],
     };
   </script>
@@ -291,7 +293,7 @@
       margin-left: -1rem;
       background: linear-gradient(
         to right,
-        rgb(116, 164, 139, 0.04) 0%,
+        rgb(116, 164, 139, 0.15) 0%,
         transparent 80%
       );
     }
@@ -300,7 +302,7 @@
       .event-item.featured {
         background: linear-gradient(
           to right,
-          rgb(179, 227, 202, 0.05) 0%,
+          rgb(179, 227, 202, 0.1) 0%,
           transparent 80%
         );
       }
